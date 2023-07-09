@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>Pet Location</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+        <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+    </head>
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+        }
+        html, body, #map {
+            height: 100%;
+            width: 100vw;
+        }
+    </style>
+    <body>
+        <div id="map"></div>
+        <script>
+            let currentUserPositionMarker, currentPetLocationMarker, locationRoute, currentLocationId;
+            var map = L.map('map').setView([-20.288605201003694, 57.56767272949219], 11);
+
+            var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            });
+            osm.addTo(map);
+
+            const setUserMarker = position => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                var accuracy = position.coords.accuracy
+
+                console.log("Your coordinate is: Lat: "+ lat +" Long: "+ lng+ " Accuracy: "+ accuracy)
+                if(currentUserPositionMarker) {
+                    currentUserPositionMarker.setLatLng(L.latLng(lat, lng))
+                } else {
+                    currentUserPositionMarker = L.marker([lat, lng])
+                    currentUserPositionMarker.addTo(map)
+                }
+                if (currentPetLocationMarker) setNewRoute()
+            }
+
+            const setPetMarker = position => {
+                const lat = position.lat;
+                const lng = position.lng;
+
+                if(currentPetLocationMarker) {
+                    currentPetLocationMarker.setOpacity(0.5)
+                }
+                currentPetLocationMarker = L.marker([lat, lng])
+                currentPetLocationMarker.addTo(map)
+
+                setNewRoute()
+            }
+
+            const setNewRoute = () => {
+                if (locationRoute) locationRoute.remove();
+                const userLocation = L.latLng(currentUserPositionMarker._latlng.lat, currentUserPositionMarker._latlng.lng)
+                const petLocation = L.latLng(currentPetLocationMarker._latlng.lat, currentPetLocationMarker._latlng.lng) 
+                locationRoute = L.Routing.control({ waypoints: [userLocation, petLocation] })
+                locationRoute.addTo(map);
+
+                bounds = new L.LatLngBounds(userLocation, petLocation);
+                map.fitBounds(bounds);
+            }
+
+            if(!navigator.geolocation) {
+                console.log("Your browser doesn't support geolocation feature!")
+            } else {
+                navigator.geolocation.watchPosition(
+                    setUserMarker,
+                    (e) => { console.log(e); },
+                    { enableHighAccuracy: true, maximumAge: 2000, timeout: 5000 }
+                );
+            }
+
+            const petLocationRequestHandler = () => {
+                fetch(`${window.location.origin}/pet_location`)
+                .then(res => res.json())
+                .then(data => {
+                    const { valid, id, latitude: lat , longitude: lng } = data;
+                    if (!valid) return;
+                    if (id != currentLocationId) {
+                        currentLocationId = id;
+                        setPetMarker({ lat, lng })
+                    } 
+                })
+            }
+
+            setInterval(petLocationRequestHandler, 10000)
+        </script>
+    </body>
+</html>
