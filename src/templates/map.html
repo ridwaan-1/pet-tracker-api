@@ -3,6 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <preference name="Scheme" value="https" />
         <title>Pet Location</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -19,11 +20,24 @@
             height: 100%;
             width: 100vw;
         }
+        @keyframes animate {
+            from { opacity: 0;}
+            to { opacity: 1;}
+        }
+          
+        .animation {
+            animation: animate 0.5s infinite alternate;
+        }
     </style>
     <body>
         <div id="map"></div>
         <script>
             let currentUserPositionMarker, currentPetLocationMarker, locationRoute, currentLocationId;
+            const petIcon = new L.icon({ 
+                iconUrl: 'pet-icon2.png', 
+                iconSize: [65, 65],
+                className: 'animation' 
+            })
             var map = L.map('map').setView([-20.288605201003694, 57.56767272949219], 11);
 
             var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -53,7 +67,7 @@
                 if(currentPetLocationMarker) {
                     currentPetLocationMarker.setOpacity(0.5)
                 }
-                currentPetLocationMarker = L.marker([lat, lng])
+                currentPetLocationMarker = L.marker([lat, lng], { icon: petIcon })
                 currentPetLocationMarker.addTo(map)
 
                 setNewRoute()
@@ -63,7 +77,10 @@
                 if (locationRoute) locationRoute.remove();
                 const userLocation = L.latLng(currentUserPositionMarker._latlng.lat, currentUserPositionMarker._latlng.lng)
                 const petLocation = L.latLng(currentPetLocationMarker._latlng.lat, currentPetLocationMarker._latlng.lng) 
-                locationRoute = L.Routing.control({ waypoints: [userLocation, petLocation] })
+                locationRoute = L.Routing.control({ 
+                    waypoints: [userLocation, petLocation],
+                    createMarker: function() { return null; },
+                })
                 locationRoute.addTo(map);
 
                 bounds = new L.LatLngBounds(userLocation, petLocation);

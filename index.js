@@ -27,6 +27,7 @@ const connection = mysql.createConnection(process.env.DATABASE_URL);
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.static('src/templates'))
 
 app.get('/pet_location', async function (req, res) {
     try {
@@ -130,4 +131,4 @@ app.get('/pet_location_map', function (req, res) {
     }
 })
 
-app.listen(process.env.PORT || 8080);
+app.listen(process.env.PORT || 8080, '192.168.100.34');
