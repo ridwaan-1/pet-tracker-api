@@ -131,4 +131,4 @@ app.get('/pet_location_map', function (req, res) {
     }
 })
 
-app.listen(process.env.PORT || 8080, '192.168.100.34');
+app.listen(process.env.PORT || 8080);
